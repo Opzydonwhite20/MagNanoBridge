@@ -1,0 +1,28 @@
+{
+  "session_directory": "data\\output\\20250802_221755",
+  "export_time": "2025-08-03T02:42:35.149751",
+  "files_created": [
+    {
+      "filename": "magnetic_fields.csv.gz",
+      "relative_path": "magnetic_fields.csv.gz",
+      "size_mb": 0.0
+    },
+    {
+      "filename": "particle_forces.csv.gz",
+      "relative_path": "particle_forces.csv.gz",
+      "size_mb": 0.0
+    },
+    {
+      "filename": "particle_trajectories.csv.gz",
+      "relative_path": "particle_trajectories.csv.gz",
+      "size_mb": 0.287
+    },
+    {
+      "filename": "simulation_summary.csv.gz",
+      "relative_path": "simulation_summary.csv.gz",
+      "size_mb": 0.008
+    }
+  ],
+  "total_size_mb": 0.296,
+  "file_count": 4
+}

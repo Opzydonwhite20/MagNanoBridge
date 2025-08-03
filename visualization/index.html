@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MagNanoBridge - Magnetic Nanoparticle Simulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 250px;
+        }
+
+        #bottom-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group h3 {
+            color: #3dd8ff;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .control-row label {
+            flex: 1;
+            font-size: 12px;
+            color: #cccccc;
+        }
+
+        .control-row input, .control-row select {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: #ffffff;
+            font-size: 12px;
+        }
+
+        .control-row input:focus, .control-row select:focus {
+            outline: none;
+            border-color: #3dd8ff;
+            box-shadow: 0 0 5px rgba(61, 216, 255, 0.3);
+        }
+
+        button {
+            background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #666666 0%, #888888 100%);
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 4px 12px rgba(136, 136, 136, 0.4);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-running {
+            background: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .status-paused {
+            background: #ffaa00;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+        }
+
+        .status-stopped {
+            background: #ff4444;
+            box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+
+        .metric-value {
+            color: #3dd8ff;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35 0%, #3dd8ff 100%);
+            transition: width 0.3s ease;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #3dd8ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            #controls, #info-panel {
+                position: relative;
+                margin: 10px;
+                max-height: none;
+            }
+
+            #bottom-panel {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #canvas-container {
+                height: 60vh;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(61, 216, 255, 0.6);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(61, 216, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="loading">
+            <div class="spinner"></div>
+            <h2>Loading MagNanoBridge...</h2>
+            <p>Initializing simulation engine</p>
+        </div>
+
+        <div id="canvas-container"></div>
+
+        <div id="controls" class="hidden">
+            <div class="control-group">
+                <h3>Simulation Control</h3>
+                <div class="control-row">
+                    <button id="play-pause-btn">▶ Start</button>
+                    <button id="reset-btn" class="secondary">🔄 Reset</button>
+                    <button id="step-btn" class="secondary">⏭ Step</button>
+                </div>
+                <div class="control-row">
+                    <label>Speed:</label>
+                    <input type="range" id="speed-slider" min="0.1" max="5" step="0.1" value="1">
+                    <span id="speed-value">1.0x</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Visualization</h3>
+                <div class="control-row">
+                    <input type="checkbox" id="show-trails" checked>
+                    <label>Particle Trails</label>
+                </div>
+                <div class="control-row">
+                    <input type="checkbox" id="show-forces" checked>
+                    <label>Force Vectors</label>
+                </div>
+                <div class="control-row">
+                    <input type="checkbox" id="show-field" checked>
+                    <label>Magnetic Field</label>
+                </div>
+                <div class="control-row">
+                    <input type="checkbox" id="show-focus-zone" checked>
+                    <label>Focus Zone</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Camera</h3>
+                <div class="control-row">
+                    <button id="camera-top">Top</button>
+                    <button id="camera-side" class="secondary">Side</button>
+                    <button id="camera-3d" class="secondary">3D</button>
+                </div>
+                <div class="control-row">
+                    <input type="checkbox" id="auto-rotate">
+                    <label>Auto Rotate</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Magnetic Field</h3>
+                <div class="control-row">
+                    <label>Coil 0:</label>
+                    <input type="range" id="coil-0" min="-5" max="5" step="0.1" value="1">
+                    <span id="coil-0-value">1.0A</span>
+                </div>
+                <div class="control-row">
+                    <label>Coil 1:</label>
+                    <input type="range" id="coil-1" min="-5" max="5" step="0.1" value="0.8">
+                    <span id="coil-1-value">0.8A</span>
+                </div>
+                <div class="control-row">
+                    <label>Coil 2:</label>
+                    <input type="range" id="coil-2" min="-5" max="5" step="0.1" value="0.8">
+                    <span id="coil-2-value">0.8A</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Focus Control</h3>
+                <div class="control-row">
+                    <input type="checkbox" id="enable-control" checked>
+                    <label>Enable PID Control</label>
+                </div>
+                <div class="control-row">
+                    <label>Target Efficiency:</label>
+                    <input type="range" id="target-efficiency" min="0" max="1" step="0.01" value="0.8">
+                    <span id="target-efficiency-value">80%</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="info-panel" class="hidden">
+            <div class="control-group">
+                <h3>Simulation Status</h3>
+                <div class="metric">
+                    <span>Status:</span>
+                    <span><span class="status-indicator status-stopped"></span><span id="sim-status">Stopped</span></span>
+                </div>
+                <div class="metric">
+                    <span>Time:</span>
+                    <span class="metric-value" id="sim-time">0.000s</span>
+                </div>
+                <div class="metric">
+                    <span>Steps:</span>
+                    <span class="metric-value" id="sim-steps">0</span>
+                </div>
+                <div class="metric">
+                    <span>FPS:</span>
+                    <span class="metric-value" id="sim-fps">0</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Particle System</h3>
+                <div class="metric">
+                    <span>Count:</span>
+                    <span class="metric-value" id="particle-count">0</span>
+                </div>
+                <div class="metric">
+                    <span>In Focus Zone:</span>
+                    <span class="metric-value" id="particles-in-zone">0</span>
+                </div>
+                <div class="metric">
+                    <span>Focus Efficiency:</span>
+                    <span class="metric-value" id="focus-efficiency">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="efficiency-progress" style="width: 0%"></div>
+                </div>
+                <div class="metric">
+                    <span>Bridge Formed:</span>
+                    <span class="metric-value" id="bridge-status">No</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Physics</h3>
+                <div class="metric">
+                    <span>Kinetic Energy:</span>
+                    <span class="metric-value" id="kinetic-energy">0 J</span>
+                </div>
+                <div class="metric">
+                    <span>Mean Speed:</span>
+                    <span class="metric-value" id="mean-speed">0 m/s</span>
+                </div>
+                <div class="metric">
+                    <span>Temperature:</span>
+                    <span class="metric-value" id="temperature">0 K</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Performance</h3>
+                <div class="metric">
+                    <span>Step Time:</span>
+                    <span class="metric-value" id="step-time">0 ms</span>
+                </div>
+                <div class="metric">
+                    <span>Render Time:</span>
+                    <span class="metric-value" id="render-time">0 ms</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="bottom-panel" class="hidden">
+            <div>
+                <button id="export-data">📊 Export Data</button>
+                <button id="save-config" class="secondary">💾 Save Config</button>
+                <button id="load-config" class="secondary">📁 Load Config</button>
+            </div>
+            <div>
+                <span id="connection-status">🔗 Connecting to simulation...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js and dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+    
+    <!-- Main application scripts -->
+    <script src="threejs/simulation-renderer.js"></script>
+    <script src="threejs/particle-system-3d.js"></script>
+    <script src="threejs/magnetic-field-viz.js"></script>
+    <script src="threejs/controls-manager.js"></script>
+    <script src="threejs/data-interface.js"></script>
+
+    <script>
+        // Main application initialization
+        class MagNanoBridgeApp {
+            constructor() {
+                this.isInitialized = false;
+                this.isRunning = false;
+                this.simulationData = null;
+                this.lastUpdateTime = 0;
+                this.fps = 0;
+                this.frameCount = 0;
+                
+                // Core components
+                this.renderer = null;
+                this.particleSystem = null;
+                this.fieldVisualizer = null;
+                this.controlsManager = null;
+                this.dataInterface = null;
+                
+                // Initialize when DOM is ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => this.initialize());
+                } else {
+                    this.initialize();
+                }
+            }
+
+            async initialize() {
+                try {
+                    console.log('Initializing MagNanoBridge visualization...');
+                    
+                    // Initialize core components
+                    await this.initializeRenderer();
+                    await this.initializeParticleSystem();
+                    await this.initializeFieldVisualizer();
+                    await this.initializeControls();
+                    await this.initializeDataInterface();
+                    
+                    // Setup event listeners
+                    this.setupEventListeners();
+                    
+                    // Hide loading screen
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('controls').classList.remove('hidden');
+                    document.getElementById('info-panel').classList.remove('hidden');
+                    document.getElementById('bottom-panel').classList.remove('hidden');
+                    
+                    this.isInitialized = true;
+                    console.log('MagNanoBridge visualization initialized successfully');
+                    
+                    // Start render loop
+                    this.startRenderLoop();
+                    
+                } catch (error) {
+                    console.error('Failed to initialize MagNanoBridge:', error);
+                    this.showError('Initialization failed: ' + error.message);
+                }
+            }
+
+            async initializeRenderer() {
+                this.renderer = new SimulationRenderer('canvas-container');
+                await this.renderer.initialize();
+            }
+
+            async initializeParticleSystem() {
+                this.particleSystem = new ParticleSystem3D(this.renderer.scene);
+                await this.particleSystem.initialize();
+            }
+
+            async initializeFieldVisualizer() {
+                this.fieldVisualizer = new MagneticFieldVisualizer(this.renderer.scene);
+                await this.fieldVisualizer.initialize();
+            }
+
+            async initializeControls() {
+                this.controlsManager = new ControlsManager(this);
+                await this.controlsManager.initialize();
+            }
+
+            async initializeDataInterface() {
+                this.dataInterface = new DataInterface(this);
+                await this.dataInterface.initialize();
+                
+                // Start connecting to simulation backend
+                this.connectToSimulation();
+            }
+
+            setupEventListeners() {
+                // Simulation control
+                document.getElementById('play-pause-btn').addEventListener('click', () => {
+                    this.toggleSimulation();
+                });
+                
+                document.getElementById('reset-btn').addEventListener('click', () => {
+                    this.resetSimulation();
+                });
+                
+                document.getElementById('step-btn').addEventListener('click', () => {
+                    this.stepSimulation();
+                });
+                
+                // Speed control
+                const speedSlider = document.getElementById('speed-slider');
+                speedSlider.addEventListener('input', (e) => {
+                    const speed = parseFloat(e.target.value);
+                    document.getElementById('speed-value').textContent = speed.toFixed(1) + 'x';
+                    this.setSimulationSpeed(speed);
+                });
+                
+                // Visualization toggles
+                document.getElementById('show-trails').addEventListener('change', (e) => {
+                    this.particleSystem.setTrailsVisible(e.target.checked);
+                });
+                
+                document.getElementById('show-forces').addEventListener('change', (e) => {
+                    this.particleSystem.setForcesVisible(e.target.checked);
+                });
+                
+                document.getElementById('show-field').addEventListener('change', (e) => {
+                    this.fieldVisualizer.setVisible(e.target.checked);
+                });
+                
+                document.getElementById('show-focus-zone').addEventListener('change', (e) => {
+                    this.renderer.setFocusZoneVisible(e.target.checked);
+                });
+                
+                // Camera controls
+                document.getElementById('camera-top').addEventListener('click', () => {
+                    this.renderer.setCameraView('top');
+                });
+                
+                document.getElementById('camera-side').addEventListener('click', () => {
+                    this.renderer.setCameraView('side');
+                });
+                
+                document.getElementById('camera-3d').addEventListener('click', () => {
+                    this.renderer.setCameraView('3d');
+                });
+                
+                document.getElementById('auto-rotate').addEventListener('change', (e) => {
+                    this.renderer.setAutoRotate(e.target.checked);
+                });
+                
+                // Coil controls
+                for (let i = 0; i < 3; i++) {
+                    const slider = document.getElementById(`coil-${i}`);
+                    slider.addEventListener('input', (e) => {
+                        const current = parseFloat(e.target.value);
+                        document.getElementById(`coil-${i}-value`).textContent = current.toFixed(1) + 'A';
+                        this.updateCoilCurrent(i, current);
+                    });
+                }
+                
+                // Focus control
+                document.getElementById('enable-control').addEventListener('change', (e) => {
+                    this.setControlEnabled(e.target.checked);
+                });
+                
+                document.getElementById('target-efficiency').addEventListener('input', (e) => {
+                    const efficiency = parseFloat(e.target.value);
+                    document.getElementById('target-efficiency-value').textContent = Math.round(efficiency * 100) + '%';
+                    this.setTargetEfficiency(efficiency);
+                });
+                
+                // Data export
+                document.getElementById('export-data').addEventListener('click', () => {
+                    this.exportData();
+                });
+                
+                document.getElementById('save-config').addEventListener('click', () => {
+                    this.saveConfiguration();
+                });
+                
+                document.getElementById('load-config').addEventListener('click', () => {
+                    this.loadConfiguration();
+                });
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.renderer.handleResize();
+                });
+            }
+
+            startRenderLoop() {
+                const animate = (currentTime) => {
+                    requestAnimationFrame(animate);
+                    
+                    // Calculate FPS
+                    this.frameCount++;
+                    if (currentTime - this.lastUpdateTime >= 1000) {
+                        this.fps = Math.round(this.frameCount * 1000 / (currentTime - this.lastUpdateTime));
+                        document.getElementById('sim-fps').textContent = this.fps;
+                        this.frameCount = 0;
+                        this.lastUpdateTime = currentTime;
+                    }
+                    
+                    // Update components
+                    if (this.isInitialized) {
+                        this.update(currentTime);
+                        this.render(currentTime);
+                    }
+                };
+                
+                animate(performance.now());
+            }
+
+            update(currentTime) {
+                // Update particle system
+                if (this.particleSystem) {
+                    this.particleSystem.update(currentTime);
+                }
+                
+                // Update field visualizer
+                if (this.fieldVisualizer) {
+                    this.fieldVisualizer.update(currentTime);
+                }
+                
+                // Update renderer
+                if (this.renderer) {
+                    this.renderer.update(currentTime);
+                }
+                
+                // Update UI with latest simulation data
+                if (this.simulationData) {
+                    this.updateUI();
+                }
+            }
+
+            render(currentTime) {
+                const renderStart = performance.now();
+                
+                if (this.renderer) {
+                    this.renderer.render();
+                }
+                
+                const renderTime = performance.now() - renderStart;
+                document.getElementById('render-time').textContent = renderTime.toFixed(1) + ' ms';
+            }
+
+            updateUI() {
+                if (!this.simulationData) return;
+                
+                const data = this.simulationData;
+                
+                // Simulation status
+                document.getElementById('sim-time').textContent = (data.time || 0).toFixed(6) + 's';
+                document.getElementById('sim-steps').textContent = data.step || 0;
+                
+                // Particle system
+                const particleCount = data.particles ? data.particles.positions.length : 0;
+                document.getElementById('particle-count').textContent = particleCount;
+                
+                const particlesInZone = data.metrics ? data.metrics.particle_count_in_zone : 0;
+                document.getElementById('particles-in-zone').textContent = particlesInZone;
+                
+                const efficiency = data.metrics ? data.metrics.focus_efficiency : 0;
+                document.getElementById('focus-efficiency').textContent = Math.round(efficiency * 100) + '%';
+                document.getElementById('efficiency-progress').style.width = (efficiency * 100) + '%';
+                
+                const bridgeFormed = data.metrics ? data.metrics.bridge_formed : false;
+                document.getElementById('bridge-status').textContent = bridgeFormed ? 'Yes' : 'No';
+                
+                // Physics
+                if (data.particles && data.particles.velocities) {
+                    const velocities = data.particles.velocities;
+                    const speeds = velocities.map(v => Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]));
+                    const meanSpeed = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+                    
+                    document.getElementById('mean-speed').textContent = meanSpeed.toExponential(2) + ' m/s';
+                    
+                    // Approximate kinetic energy
+                    const mass = 1e-15; // Approximate particle mass
+                    const kineticEnergy = 0.5 * mass * speeds.reduce((sum, v) => sum + v*v, 0);
+                    document.getElementById('kinetic-energy').textContent = kineticEnergy.toExponential(2) + ' J';
+                    
+                    // Approximate temperature from kinetic energy
+                    const kb = 1.380649e-23;
+                    const temperature = (2 * kineticEnergy) / (3 * particleCount * kb);
+                    document.getElementById('temperature').textContent = Math.round(temperature) + ' K';
+                }
+            }
+
+            async connectToSimulation() {
+                try {
+                    document.getElementById('connection-status').textContent = '🔗 Connecting to simulation...';
+                    
+                    // Initialize data interface connection
+                    await this.dataInterface.connect();
+                    
+                    document.getElementById('connection-status').textContent = '✅ Connected to simulation';
+                    
+                    // Start receiving data
+                    this.dataInterface.onDataReceived = (data) => {
+                        this.onSimulationDataReceived(data);
+                    };
+                    
+                } catch (error) {
+                    console.error('Failed to connect to simulation:', error);
+                    document.getElementById('connection-status').textContent = '❌ Connection failed';
+                }
+            }
+
+            onSimulationDataReceived(data) {
+                this.simulationData = data;
+                
+                // Update particle system
+                if (data.particles && this.particleSystem) {
+                    this.particleSystem.updateParticles(data.particles);
+                }
+                
+                // Update field visualizer
+                if (data.magnetic_field && this.fieldVisualizer) {
+                    this.fieldVisualizer.updateField(data.magnetic_field);
+                }
+                
+                // Update focus zone
+                if (data.focus_zone && this.renderer) {
+                    this.renderer.updateFocusZone(data.focus_zone);
+                }
+                
+                // Update coil visualization
+                if (data.coils && this.fieldVisualizer) {
+                    this.fieldVisualizer.updateCoils(data.coils);
+                }
+            }
+
+            toggleSimulation() {
+                if (this.isRunning) {
+                    this.pauseSimulation();
+                } else {
+                    this.startSimulation();
+                }
+            }
+
+            async startSimulation() {
+                try {
+                    await this.dataInterface.startSimulation();
+                    this.isRunning = true;
+                    
+                    document.getElementById('play-pause-btn').textContent = '⏸ Pause';
+                    document.getElementById('sim-status').textContent = 'Running';
+                    document.querySelector('.status-indicator').className = 'status-indicator status-running';
+                    
+                } catch (error) {
+                    console.error('Failed to start simulation:', error);
+                    this.showError('Failed to start simulation: ' + error.message);
+                }
+            }
+
+            async pauseSimulation() {
+                try {
+                    await this.dataInterface.pauseSimulation();
+                    this.isRunning = false;
+                    
+                    document.getElementById('play-pause-btn').textContent = '▶ Resume';
+                    document.getElementById('sim-status').textContent = 'Paused';
+                    document.querySelector('.status-indicator').className = 'status-indicator status-paused';
+                    
+                } catch (error) {
+                    console.error('Failed to pause simulation:', error);
+                }
+            }
+
+            async resetSimulation() {
+                try {
+                    await this.dataInterface.resetSimulation();
+                    this.isRunning = false;
+                    
+                    document.getElementById('play-pause-btn').textContent = '▶ Start';
+                    document.getElementById('sim-status').textContent = 'Stopped';
+                    document.querySelector('.status-indicator').className = 'status-indicator status-stopped';
+                    
+                    // Reset visualizations
+                    if (this.particleSystem) {
+                        this.particleSystem.reset();
+                    }
+                    
+                } catch (error) {
+                    console.error('Failed to reset simulation:', error);
+                }
+            }
+
+            async stepSimulation() {
+                try {
+                    await this.dataInterface.stepSimulation();
+                } catch (error) {
+                    console.error('Failed to step simulation:', error);
+                }
+            }
+
+            setSimulationSpeed(speed) {
+                if (this.dataInterface) {
+                    this.dataInterface.setSpeed(speed);
+                }
+            }
+
+            updateCoilCurrent(coilIndex, current) {
+                if (this.dataInterface) {
+                    this.dataInterface.updateCoilCurrent(coilIndex, current);
+                }
+            }
+
+            setControlEnabled(enabled) {
+                if (this.dataInterface) {
+                    this.dataInterface.setControlEnabled(enabled);
+                }
+            }
+
+            setTargetEfficiency(efficiency) {
+                if (this.dataInterface) {
+                    this.dataInterface.setTargetEfficiency(efficiency);
+                }
+            }
+
+            exportData() {
+                if (this.dataInterface) {
+                    this.dataInterface.exportData();
+                }
+            }
+
+            saveConfiguration() {
+                if (this.dataInterface) {
+                    this.dataInterface.saveConfiguration();
+                }
+            }
+
+            loadConfiguration() {
+                if (this.dataInterface) {
+                    this.dataInterface.loadConfiguration();
+                }
+            }
+
+            showError(message) {
+                // Create error overlay
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(255, 68, 68, 0.95);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    z-index: 10000;
+                    max-width: 400px;
+                    text-align: center;
+                `;
+                
+                errorDiv.innerHTML = `
+                    <h3>Error</h3>
+                    <p>${message}</p>
+                    <button onclick="this.parentElement.remove()" style="margin-top: 10px;">OK</button>
+                `;
+                
+                document.body.appendChild(errorDiv);
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    if (errorDiv.parentElement) {
+                        errorDiv.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        // Initialize the application
+        window.magNanoBridge = new MagNanoBridgeApp();
+    </script>
+</body>
+</html>

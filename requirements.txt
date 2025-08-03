@@ -1,0 +1,52 @@
+# MagNanoBridge Python Dependencies
+# Core scientific computing
+numpy>=1.20.0
+scipy>=1.7.0
+matplotlib>=3.3.0
+pandas>=1.3.0
+
+# Configuration and data handling
+pyyaml>=5.4.0
+h5py>=3.1.0
+toml>=0.10.2
+
+# Logging and utilities
+colorlog>=6.0.0
+tqdm>=4.60.0
+psutil>=5.8.0
+
+# Testing framework
+pytest>=6.0.0
+pytest-cov>=2.12.0
+pytest-benchmark>=3.4.0
+
+# Jupyter notebook support
+jupyter>=1.0.0
+ipywidgets>=7.6.0
+plotly>=5.0.0
+
+# Optional: Advanced numerical methods
+numba>=0.58.0  # Updated for Python 3.12+
+sympy>=1.8.0
+
+# Optional: Machine learning for AI control
+scikit-learn>=0.24.0
+torch>=1.9.0
+
+# Optional: Parallel processing
+joblib>=1.0.0
+mpi4py>=3.1.0
+
+# Optional: Advanced visualization
+vtk>=9.0.0
+mayavi>=4.7.0
+
+# Development tools
+black>=21.0.0
+flake8>=3.9.0
+mypy>=0.910
+
+# Documentation
+sphinx>=4.0.0
+sphinx-rtd-theme>=0.5.0
+nbsphinx>=0.8.0
